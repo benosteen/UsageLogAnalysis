@@ -1,0 +1,20 @@
+<%inherit file="base.html"/>
+<%def name="head_tags()">
+</%def>
+<h1> Statistics for ${pid}</h1>
+<p> Usage over time <img src="${sparkline_url}" border="0"/>
+</p>
+<table>
+    <tr><th>Day</th><th>Views of the record splash page</th><th>Downloads</th><th>Other uses (clicked on alternate versions etc.)</th></td>
+    % for date in dlist:
+        ${makerow(date)}
+    % endfor
+</table>
+<h3>Geographical distribution (Green = lightest use -> Red = heaviest use)</h3>
+<img src="${geousage_url}" border="0"/>
+
+<%def name="makerow(date)">
+    <tr>
+        <td>${date}</td><td>${dates[date]['v']}</td><td>${dates[date]['d']}</td><td>${dates[date]['o']}</td>
+    </tr>
+</%def>
