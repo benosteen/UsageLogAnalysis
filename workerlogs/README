@@ -1,0 +1,1 @@
+This directory would contain the log files for your various worker apps - either use "supervisorctl tail {workername}' remotely to tail these logs or do so locally.
