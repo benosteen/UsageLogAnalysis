@@ -21,6 +21,8 @@ from utils import pageview, parseline, getonobjecturl, OBJ_VIEW, OBJ_GETS, OBJ_D
 from getmetadata import oralookup, resolveTinyPid
 import hashlib
 
+from datetime import datetime
+
 import sys
 
 item = "objectviews"
@@ -116,6 +118,7 @@ if __name__ == "__main__":
                 r.sadd("ua:%s" % pl[4], pl[13])
                 increment_counts(pl, md, "views", r, pid)
                 r.incr("t:views:%s" % pid)
+                r.set("v:stamp", datetime.now().isoformat()[:22])
             else:
                 m = OBJ_DATASTREAM.match(request_url)
                 if m != None:
@@ -125,11 +128,13 @@ if __name__ == "__main__":
                     r.sadd("ua:%s" % pl[4], pl[13])
                     increment_counts(pl, md, "dls", r, pid)
                     r.incr("t:dls:%s" % pid)
+                    r.set("d:stamp", datetime.now().isoformat()[:22])
                 else:
                     r.sadd("%s:%s:o" % (pl[0], pid), pl[4])
                     r.sadd("do:%s" % pid, pl[0])
                     r.sadd("ua:%s" % pl[4], pl[13])
                     increment_counts(pl, md, "other", r, pid)
                     r.incr("t:other:%s" % pid)
+                    r.set("o:stamp", datetime.now().isoformat()[:22])
         else:
             sleep(2)

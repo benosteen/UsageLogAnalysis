@@ -1,0 +1,25 @@
+# -*- coding: utf-8 -*-
+<%inherit file="base.html"/>
+<%def name="head_tags()">
+</%def>
+<h1>Browsing "${settype}"</h1>
+% if startswith:
+<h3>Filter: "${startswith}*"</h3>
+% endif
+
+<table>
+<thead>
+<td>Label</td>
+<td>Page views</td>
+<td>Downloads</td>
+<td>Other</td>
+</thead>
+% for item in bset:
+<tr>
+<td><a href="/entity/${item[1]}?format=html">${item[0]}</a></td>
+<td>${item[2]}</td>
+<td>${item[3]}</td>
+<td>${item[4]}</td>
+</tr>
+% endfor
+</table>

@@ -16,7 +16,7 @@ def get_total_ip_usage(pid,r):
   ip_addresses = set()
   for hittype in ['v','d']:
     hits[hittype] = r.smembers("d%s:%s" % (hittype, pid))
-    for date in hits[hittype]:
+    for date in (hits[hittype] or []):
       ip_addresses.update(r.smembers("%s:%s:%s" % (date, pid, hittype)))
   return ip_addresses
 

@@ -92,6 +92,14 @@ def isbotip(ip, r):   # r = redis_client
             return True
     return False
 
+def isbot_in_ua(pl):
+    if len(pl)>13:
+        ua = pl[13]
+        for agent in ['msnbot','Slurp','bot','crawler']:
+            if ua.find(agent)>0:
+                return True
+    return False 
+
 def characterise_logline(line, r):
     pl = parseline(line)
     
@@ -99,6 +107,9 @@ def characterise_logline(line, r):
         pid = getonobjecturl(pl)
         logger.debug("Testing if %s is a bot" % (pl[4]))
         if IP_TEST.match(pl[4]) != None and pl[10] != "404":
+            if isbot_in_ua(pl):
+                return "bot"
+                logger.debug("User agent says it is a bot!")
             if isbotip(pl[4], r):
                 logger.debug("It is a bot!")
                 return "bot"

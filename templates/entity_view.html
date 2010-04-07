@@ -1,0 +1,48 @@
+# -*- coding: utf-8 -*-
+<%inherit file="base.html"/>
+<%def name="head_tags()">
+</%def>
+% for etype in entities:
+<%
+e = entities[etype]
+%>
+<h1> Statistics for "${e['label']}" (in the '${etype}' facet)</h1>
+<p><a href="/entity/${e['eid']}?format=html">Link to this page</a></p>
+<div style="font-size: 0.7em; float:right; border-style: 1px solid;">
+<table>
+    <tr><th>Day</th><th>Views of the record pages</th><th>Downloads</th><th>Other uses (clicked on alternate versions etc.)</th></td>
+<%
+dlist = e['dates'].keys()
+dlist.sort()
+%>
+    % for date in dlist:
+        ${makerow(date)}
+    % endfor
+</table>
+</div>
+<p> ${e['label']} - Items' activity over time <img src="${e['sparkline_url']}" border="0"/>
+</p>
+<h4> Total <span style="color:red; font-size:1.2em;">views</span> since ${dlist[0]}: <span style="color:red; font-size:1.4em;">${e['total']['v']}</span></h4>
+<h4> Total <span style="color:red; font-size:1.2em;">downloads</span> since ${dlist[0]}: <span style="color:red; font-size:1.4em;">${e['total']['d']}</span></h4>
+<h3> ${e['label']} appears in following items:</h3>
+<ul>
+% for item in e['items']:
+<li>${item[0]} - <a href="http://ora.ouls.ox.ac.uk/objects/${item[1]}">(See in ORA)</a> - <a href="/pid/${item[1]}?format=html">(See stats for this item)</a>
+% if item[1] in e['mini_sparklines']:
+<ul><li><em>${e['mini_dates'][item[1]][0]}</em> <img src="${e['mini_sparklines'][item[1]]}" border="0"/> <em>${e['mini_dates'][item[1]][1]}</em></li>
+</ul>
+% endif
+</li>
+% endfor
+</ul>
+% if e.has_key('geousage_url'):
+<h3>Geographical distribution (Green = lightest use -> Red = heaviest use)</h3>
+<img src="${e['geousage_url']}" border="0"/>
+% endif
+<hr/>
+% endfor
+<%def name="makerow(date)">
+    <tr>
+        <td>${date}</td><td style="text-align:center;">${e['dates'][date]['v']}</td><td style="text-align:center;">${e['dates'][date]['d']}</td><td style="text-align:center;">${e['dates'][date]['o']}</td>
+    </tr>
+</%def>

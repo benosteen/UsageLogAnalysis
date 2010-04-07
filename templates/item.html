@@ -1,20 +1,38 @@
+# -*- coding: utf-8 -*-
 <%inherit file="base.html"/>
 <%def name="head_tags()">
+<title>Statistics for "${label}"</title>
 </%def>
-<h1> Statistics for ${pid}</h1>
-<p> Usage over time <img src="${sparkline_url}" border="0"/>
-</p>
+<h1> Statistics for "${label}"</h1>
+<p><a href="/pid/${pid}?format=html">Link to this page</a></p>
+<div style="font-size: 0.7em; float:right; border-style: 1px solid;">
 <table>
-    <tr><th>Day</th><th>Views of the record splash page</th><th>Downloads</th><th>Other uses (clicked on alternate versions etc.)</th></td>
+    <tr><th>Day</th><th>Views of the record page</th><th>Downloads</th><th>Other unclassified</th></td>
     % for date in dlist:
         ${makerow(date)}
     % endfor
 </table>
+</div>
+<h3> In ORA: <a href="http://ora.ouls.ox.ac.uk/objects/${pid}">http://ora.ouls.ox.ac.uk/objects/${pid}</a></h3>
+<p> Usage over time <img src="${sparkline_url}" border="0"/>
+</p>
+<h4> Total <span style="color:red; font-size:1.2em;">views</span> since ${dlist[0]}: <span style="color:red; font-size:1.4em;">${total['v']}</span></h4>
+<h4> Total <span style="color:red; font-size:1.2em;">downloads</span> since ${dlist[0]}: <span style="color:red; font-size:1.4em;">${total['d']}</span></h4>
+<h3> The following tracked 'entities' appear in this item:</h3>
+% for et in entities:
+<h4>${et.capitalize()}</h4>
+<ul>
+    % for item in entities[et]:
+   <li><a href="/entity/${item[1]}?format=html">${item[0]}</a></li>
+    % endfor
+</ul>
+% endfor
+% if geousage_url:
 <h3>Geographical distribution (Green = lightest use -> Red = heaviest use)</h3>
 <img src="${geousage_url}" border="0"/>
-
+% endif
 <%def name="makerow(date)">
     <tr>
-        <td>${date}</td><td>${dates[date]['v']}</td><td>${dates[date]['d']}</td><td>${dates[date]['o']}</td>
+        <td>${date}</td><td style="text-align:center;">${dates[date]['v']}</td><td style="text-align:center;">${dates[date]['d']}</td><td style="text-align:center;">${dates[date]['o']}</td>
     </tr>
 </%def>

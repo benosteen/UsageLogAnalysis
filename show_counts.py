@@ -15,6 +15,14 @@ from datetime import datetime
 
 goog_encoding = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
+def get_ora_totals(r):
+  totals = {'views':0, 'dls':0, 'other':0}
+  for hittype in totals:
+    for key in r.keys("t:%s:uuid*" % hittype):
+      totals[hittype] = totals[hittype] + int(r.get(key))
+  stamps = {'lastview':r.get("v:stamp"), 'lastdl':r.get("d:stamp")}
+  return {'totals':totals, 'updated':stamps}
+
 def combined_count(*args):
   total = 0
   for item in args:
@@ -34,12 +42,15 @@ def get_dateline(dlist, dates):
     activity[index] = record['v'] + record['d']
   return activity
 
-def get_dateline_url(dlist, dates):
+def get_dateline_url(dlist, dates, size = (400,125), simple=False):
   data = get_dateline(dlist, dates)
   #return "http://chart.apis.google.com/chart?chs=300x125&cht=ls&chco=0077CC&chds=0,%s&chxt=x&chxl=0:|%s|%s|%s|%s&chd=t:%s" % (max(data), dlist[0], dlist[len(dlist)/3], dlist[len(dlist)*2/3], dlist[-1], ",".join(map(str,data)))
   maxdata = max(data)
-  adjusted_data = map(lambda x: int(x/float(maxdata)*60.0), data)
-  return "http://chart.apis.google.com/chart?chs=400x125&cht=ls&chco=0077CC&chds=0,%s&chxt=x&chxl=0:|%s|%s|%s|%s&chd=e:%s" % (maxdata, dlist[0], dlist[len(dlist)/3], dlist[len(dlist)*2/3], dlist[-1], "".join([str(goog_encoding[x]) for x in adjusted_data]))
+  adjusted_data = map(lambda x: int(float(x)/float(maxdata)*60.0), data)
+  if simple:
+    return "http://chart.apis.google.com/chart?chs=%sx%s&cht=ls&chco=0077CC&chds=0,%s&chd=s:%s" % (size[0], size[1],maxdata, "".join([str(goog_encoding[x]) for x in adjusted_data]))
+  else:
+    return "http://chart.apis.google.com/chart?chs=%sx%s&cht=ls&chco=0077CC&chds=0,%s&chxt=x&chxl=0:|%s|%s|%s|%s&chd=s:%s" % (size[0], size[1],maxdata, dlist[0], dlist[len(dlist)/3], dlist[len(dlist)*2/3], dlist[-1], "".join([str(goog_encoding[x]) for x in adjusted_data]))
 
 def item_stats(pid, r):
   hits = {}
@@ -76,7 +87,7 @@ def browse_set(phrase, r, limit, startswith):
   items = []
   for item in (r.smembers(phrase) or []):
     if limit == 0 or combined_count(r.get("t:views:%s" % item), r.get("t:dls:%s" % item)) > limit:
-      label = r.get(item)
+      label = r.get(item).decode('utf-8')
       if not startswith or label.startswith(startswith):
         items.append((label, item, r.get("t:views:%s" % item), r.get("t:dls:%s" % item), r.get("t:other:%s" % item)))
   return items
@@ -112,7 +123,7 @@ def save_set(phrase, r, limit, startswith, csvfile, verbose=False):
         items = []
     for item in items:
       if limit == 0 or combined_count(r.get("t:views:%s" % item), r.get("t:dls:%s" % item)) > limit:
-        label = r.get(item)
+        label = r.get(item).decode('utf-8')
         if not startswith or label.startswith(startswith):
           views, dls, other = (r.get("t:views:%s" % item), r.get("t:dls:%s" % item), r.get("t:other:%s" % item))
           csv_list.writerow([label, views, dls, other, item])
@@ -138,21 +149,25 @@ def save_set(phrase, r, limit, startswith, csvfile, verbose=False):
     csv_list.writerow(["Note, that the labels indicate the usage statistics for the records which directly indicate that they have authors with that affiliation","","","",""])
 
 def entity_breakdown(id, r):
-  label = r.get(id)
+  label = r.get(id).decode('utf-8')
   if label:
     # Entity exist exists
     totals = {'v':0, 'd':0, 'o':0}
     dates = {}
+    mini_sparklines = {}
+    mini_dates = {}
     items = entity_found_in_items(id, r)
     for pid in [x[1] for x in items]:
       piddlist, piddates, pidtotal = item_stats(pid, r)
+      mini_sparklines[pid] = get_dateline_url(piddlist, piddates, (400,30), simple = True)
+      mini_dates[pid] = (piddlist[0], piddlist[1])
       for key in pidtotal:
         totals[key] = totals[key] + pidtotal[key]
-        for date in piddates:
-          if not dates.get(date):
-            dates[date] = {'v':0, 'd':0, 'o':0}
-          for hittype in ['v','d','o']:
-            dates[date][hittype] = dates[date][hittype] + piddates[date][hittype]
+      for date in piddates:
+        if not dates.get(date):
+          dates[date] = {'v':0, 'd':0, 'o':0}
+        for hittype in piddates[date]:
+          dates[date][hittype] = dates[date][hittype] + piddates[date][hittype]
     dlist = dates.keys()
     dlist.sort()
     if dlist:
@@ -161,13 +176,17 @@ def entity_breakdown(id, r):
                                             'items':items,
                                             'total':totals,
                                             'dates':dates,
-                                            'sparkline_url':get_dateline_url(dlist, dates)}
+                                            'sparkline_url':sparkline_url,
+                                            'mini_sparklines':mini_sparklines,
+                                            'mini_dates':mini_dates}
 
     return {'label':label,
                                             'items':items,
                                             'total':totals,
                                             'dates':dates,
-                                            'sparkline_url':""}
+                                            'sparkline_url':"",
+                                            'mini_sparklines':mini_sparklines,
+                                            'mini_dates':mini_dates}
 
 def entity_found_in_items(phrase, r):
   return [(titlelookup(pid), pid) for pid in (r.smembers("e:%s" % phrase) or [])]
@@ -178,7 +197,7 @@ def entity_lookup(phrase, r):
 def get_entities_in_pid(pid, r):
   entities = {}
   for entity in (r.smembers("e:%s" % pid) or []):
-    label = r.get(entity)
+    label = r.get(entity).decode('utf-8')
     try:
       itemtype = rev_prefixes.get(entity.split(":")[0])
     except:

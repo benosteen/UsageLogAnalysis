@@ -1,0 +1,10 @@
+<%inherit file="base.html"/>
+<%def name="head_tags()">
+<title>Entity lookup</title>
+</%def>
+<h1>Entity Lookup</h1>
+<form action="/entity" method="POST">
+<input type="text" name="entity"></input>
+<input type="hidden" name="format" value="html"/>
+<input type="submit" name="Lookup Entity" value="Lookup Entity"/>
+</form>

@@ -1,0 +1,38 @@
+<%inherit file="base.html"/>
+<%def name="head_tags()">
+<title>ORA statistics</title>
+</%def>
+<h1> ORA Statistics</h1>
+<h2> Total Views: ${c['totals']['views']} </h2>
+<h2> Total Downloads: ${c['totals']['dls']} </h2>
+<h3> Last view: ${c['updated']['lastview']} and last download: ${c['updated']['lastdl']}</h3>
+<hr/>
+<h1>Item Lookup</h1>
+<form action="/pid" method="POST">
+<input type="text" name="pid"></input>
+<input type="hidden" name="format" value="html"/>
+<input type="submit" name="Lookup PID" value="Lookup PID"/>
+</form>
+<hr/>
+<h1>Entity Lookup</h1>
+<form action="/entity" method="POST">
+<input type="text" name="entity"></input>
+<input type="hidden" name="format" value="html"/>
+<input type="submit" name="Lookup Entity" value="Lookup Entity"/>
+</form>
+<hr/>
+<h1>Browse groups</h1>
+<form action="/browse" method="POST">
+<select name="type">
+<option value="faculty">Faculty</option>
+<option value="institution">Institution</option>
+<option value="names">Name</option>
+<option value="keyphrases">Keyphrase</option>
+<option value="subjects">Subject</option>
+<option value="collection">Collection</option>
+<option value="contenttype">Content Type</option>
+</select>
+<label for="startswith">Starts with? (optional)</label><input type="text" name="startswith"></input>
+<input type="hidden" name="format" value="html"/>
+<input type="submit" name="Get results" value="Get results"/>
+</form>
