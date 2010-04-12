@@ -28,7 +28,7 @@ def get_top_dls(r, size=10):
     topitems.append((item[0], item[1], titlelookup(item[1])))
   return topitems
 
-def analyse_past_days_dls(r, keyname, days=30, size=None):
+def analyse_past_days_dls(r, keyname, days=30, size=None, exclude=[]):
   n = datetime.now()
   dl_keys = []
   for day in xrange(days):
@@ -37,9 +37,10 @@ def analyse_past_days_dls(r, keyname, days=30, size=None):
   tally = {}
   for k in dl_keys:
     pid = "uuid:" + k.split(":")[2]
-    if not tally.has_key(pid):
-      tally[pid] = 0
-    tally[pid] = tally[pid] + r.scard(k)
+    if pid not in exclude:
+      if not tally.has_key(pid):
+        tally[pid] = 0
+      tally[pid] = tally[pid] + r.scard(k)
   heap = []
   for pid in tally:
     heappush(heap, (tally[pid], pid, titlelookup(pid)))
