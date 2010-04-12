@@ -4,6 +4,7 @@ from count import entity_existence, prefixes, rev_prefixes
 
 from redis import Redis
 
+from heapq import heappush, nlargest
 
 from getmetadata import titlelookup
 
@@ -11,9 +12,44 @@ from ucsv import UnicodeWriter as csvwriter
 
 from geolocate import get_gchart_map_for_pid
 
-from datetime import datetime
+from datetime import datetime, timedelta
+
+import simplejson
 
 goog_encoding = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+def get_top_dls(r, size=10):
+  topitems = []
+  scores = []
+  for total_key in r.keys("t:dls:uuid*"):
+    score = r.get(total_key)
+    heappush(scores, (int(score), total_key[6:]))
+  for item in nlargest(size, scores):
+    topitems.append((item[0], item[1], titlelookup(item[1])))
+  return topitems
+
+def analyse_past_days_dls(r, keyname, days=30, size=None):
+  n = datetime.now()
+  dl_keys = []
+  for day in xrange(days):
+    tdate = n + timedelta(days=-day)
+    dl_keys.extend([x for x in r.keys("%s:uuid*" % (tdate.strftime("%Y-%m-%d"))) if x.endswith("d")])
+  tally = {}
+  for k in dl_keys:
+    pid = "uuid:" + k.split(":")[2]
+    if not tally.has_key(pid):
+      tally[pid] = 0
+    tally[pid] = tally[pid] + r.scard(k)
+  heap = []
+  for pid in tally:
+    heappush(heap, (tally[pid], pid, titlelookup(pid)))
+  if size and isinstance(size, int):
+    heap = nlargest(size, heap)
+  r.set("analysis:%s" % keyname, simplejson.dumps({'now':n.isoformat(),
+                                                   'days':days,
+                                                   'size':size,
+                                                   'results':heap}) )
+  return heap
 
 def get_ora_totals(r):
   totals = {'views':0, 'dls':0, 'other':0}

@@ -12,6 +12,10 @@ from getmetadata import titlelookup
 
 from show_counts import get_entities_in_pid, entity_breakdown, get_ora_totals
 
+from show_counts import get_top_dls
+
+from datetime import datetime
+
 from geolocate import get_gchart_map_for_pid 
 
 from urllib import unquote
@@ -25,6 +29,8 @@ urls = ("/", "usage",
         "/pid(/.*)?", "pid",
         "/browse(/.*)?", "browse",
         "/entity(/.*)?", "entity",
+        "/topten[/]?", "topten",
+        "/30dayschart[/]?", "chart",
         )
 app = web.application(urls, globals())
 
@@ -47,9 +53,46 @@ def determine_tagtype(tag):
     else:
         return "f" # unknown, try searching for the freetext as an entity
 
+class topten:
+    def GET(self, format="html"):
+        options = web.input()
+        format = options.get("format") or format
+        if format in ['fragment','widget']:
+            return render.topten_widget(topten=get_top_dls(r))
+        elif format in ['html','htm']:
+            return render.topten_page(topten=get_top_dls(r))
+        else:
+            return simplejson.dumps(get_top_dls(r))
+
+    def POST(self):
+        params = web.input()
+        if "format" in params:
+            return self.GET(format=params.get("format","html"))
+
+class chart:
+    def GET(self, format="html"):
+        options = web.input()
+        format = options.get("format") or format
+        report = simplejson.loads(r.get("analysis:current"))
+        report['humandate'] = datetime.strptime(report['now'].split(".")[0], "%Y-%m-%dT%H:%M:%S").strftime("%c")
+        if format in ['fragment', 'widget']:
+            return render.chart_widget(report=report)
+        elif format in ['html','htm']:
+            return render.chart_page(report=report)
+        else:
+            return simplejson.dumps(report)
+
+    def POST(self):
+        params = web.input()
+        if "format" in params:
+            return self.GET(format=params.get("format","html"))
+
+        
+
 class usage:
     def GET(self):
-        return render.home(c = get_ora_totals(r))
+        report = simplejson.loads(r.get("analysis:current"))
+        return render.home(c = get_ora_totals(r), topten=get_top_dls(r), chart=report)
 
 class entity:
     def GET(self, id = None, format = "json"):
